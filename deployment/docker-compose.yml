@@ -1,0 +1,154 @@
+version: '3.8'
+
+services:
+  # MySQL Database
+  mysql:
+    image: mysql:8.0
+    container_name: sign_lang_mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootpassword}
+      MYSQL_DATABASE: ${DB_NAME:-sign_language_db}
+      MYSQL_USER: ${DB_USER:-sign_lang_user}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-sign_lang_password}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    networks:
+      - sign_lang_network
+    restart: unless-stopped
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: sign_lang_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - sign_lang_network
+    restart: unless-stopped
+
+  # Python ML Backend
+  python-ml:
+    build:
+      context: ../python_ml
+      dockerfile: Dockerfile
+    container_name: sign_lang_python_ml
+    environment:
+      - DB_HOST=mysql
+      - DB_USER=${DB_USER:-sign_lang_user}
+      - DB_PASSWORD=${DB_PASSWORD:-sign_lang_password}
+      - DB_NAME=${DB_NAME:-sign_language_db}
+      - REDIS_URL=redis://redis:6379/0
+    ports:
+      - "5001:5000"
+    volumes:
+      - ./models:/app/models
+      - ./uploads:/app/uploads
+    depends_on:
+      - mysql
+      - redis
+    networks:
+      - sign_lang_network
+    restart: unless-stopped
+
+  # Flask API
+  flask-api:
+    build:
+      context: ../flask_api
+      dockerfile: Dockerfile
+    container_name: sign_lang_flask_api
+    environment:
+      - DB_HOST=mysql
+      - DB_USER=${DB_USER:-sign_lang_user}
+      - DB_PASSWORD=${DB_PASSWORD:-sign_lang_password}
+      - DB_NAME=${DB_NAME:-sign_language_db}
+      - REDIS_URL=redis://redis:6379/0
+      - PYTHON_ML_URL=http://python-ml:5000
+      - SECRET_KEY=${SECRET_KEY:-your-secret-key}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-jwt-secret-string}
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./uploads:/app/uploads
+    depends_on:
+      - mysql
+      - redis
+      - python-ml
+    networks:
+      - sign_lang_network
+    restart: unless-stopped
+
+  # PHP Backend
+  php-backend:
+    build:
+      context: ../php_backend
+      dockerfile: Dockerfile
+    container_name: sign_lang_php_backend
+    environment:
+      - DB_HOST=mysql
+      - DB_USER=${DB_USER:-sign_lang_user}
+      - DB_PASSWORD=${DB_PASSWORD:-sign_lang_password}
+      - DB_NAME=${DB_NAME:-sign_language_db}
+      - PYTHON_ML_URL=http://python-ml:5000
+      - FLASK_API_URL=http://flask-api:5000
+      - JWT_SECRET=${JWT_SECRET_KEY:-jwt-secret-string}
+    ports:
+      - "8080:80"
+    volumes:
+      - ./uploads:/var/www/html/uploads
+    depends_on:
+      - mysql
+      - flask-api
+    networks:
+      - sign_lang_network
+    restart: unless-stopped
+
+  # React Frontend
+  react-frontend:
+    build:
+      context: ../react_frontend
+      dockerfile: Dockerfile
+    container_name: sign_lang_react_frontend
+    environment:
+      - REACT_APP_API_URL=http://localhost:5000
+      - REACT_APP_SOCKET_URL=http://localhost:5000
+      - REACT_APP_PHP_API_URL=http://localhost:8080
+    ports:
+      - "3000:80"
+    depends_on:
+      - flask-api
+      - php-backend
+    networks:
+      - sign_lang_network
+    restart: unless-stopped
+
+  # Nginx Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    container_name: sign_lang_nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/ssl:/etc/nginx/ssl
+      - ./uploads:/var/www/uploads
+    depends_on:
+      - react-frontend
+      - flask-api
+      - php-backend
+    networks:
+      - sign_lang_network
+    restart: unless-stopped
+
+volumes:
+  mysql_data:
+  redis_data:
+
+networks:
+  sign_lang_network:
+    driver: bridge
