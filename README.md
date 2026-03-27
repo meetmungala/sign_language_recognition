@@ -71,8 +71,8 @@ A comprehensive platform for sign language recognition, translation, and learnin
 
 1. **Clone the repository**
    ```bash
-   git clone <repository-url>
-   cd sign-language-platform
+   git clone https://github.com/meetmungala/sign_language_recognition.git
+   cd sign_language_recognition
    ```
 
 2. **Set up environment variables**
@@ -295,9 +295,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Support
 
-- **Documentation**: [Wiki](https://github.com/your-repo/wiki)
-- **Issues**: [GitHub Issues](https://github.com/your-repo/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/your-repo/discussions)
+- **Documentation**: [Wiki](https://github.com/meetmungala/sign_language_recognition/wiki)
+- **Issues**: [GitHub Issues](https://github.com/meetmungala/sign_language_recognition/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/meetmungala/sign_language_recognition/discussions)
 - **Email**: support@signlangplatform.com
 
 ## 🗺️ Roadmap
@@ -320,4 +320,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **Made with ❤️ for the disabled community**
 
-Updated for improvements. Minor documentation update.
+> Last updated: March 2026
