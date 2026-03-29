@@ -28,9 +28,11 @@ A comprehensive platform for sign language recognition, translation, and learnin
 ├── flask_api/          # Flask REST API for ML predictions
 ├── php_backend/        # PHP backend for user management and authentication
 ├── react_frontend/     # React.js frontend with Three.js animations
-├── database/           # MySQL/MongoDB database schemas and migrations
-├── docs/              # Documentation and API specifications
-└── deployment/        # Docker and deployment configurations
+├── database/           # MySQL database schemas and initialization scripts
+├── deployment/         # Docker Compose and deployment configurations
+├── FLASK_API_FIXED.md  # Fix notes for Flask API dependency issues
+├── MEDIAPIPE_FIXED.md  # Fix notes for MediaPipe / Python 3.13 compatibility
+└── start_project.bat   # Windows quick-start script (XAMPP + npm)
 ```
 
 ## 🛠️ Tech Stack
@@ -69,6 +71,8 @@ A comprehensive platform for sign language recognition, translation, and learnin
 
 ### Option 1: Docker (Recommended)
 
+> **Note:** Individual service Dockerfiles are required but not included in this repository. Build them per-service before running Docker Compose.
+
 1. **Clone the repository**
    ```bash
    git clone https://github.com/meetmungala/sign_language_recognition.git
@@ -77,19 +81,19 @@ A comprehensive platform for sign language recognition, translation, and learnin
 
 2. **Set up environment variables**
    ```bash
-   cp .env.example .env
-   # Edit .env with your configuration
+   cp react_frontend/env.example react_frontend/.env
+   # Edit react_frontend/.env with your configuration
    ```
 
 3. **Start all services**
    ```bash
-   docker-compose up -d
+   docker-compose -f deployment/docker-compose.yml up -d
    ```
 
 4. **Initialize database**
    ```bash
-   docker-compose exec mysql mysql -u root -p < database/schema.sql
-   docker-compose exec python-ml python database/init_data.py
+   docker-compose -f deployment/docker-compose.yml exec mysql mysql -u root -p < database/schema.sql
+   docker-compose -f deployment/docker-compose.yml exec python-ml python database/init_data.py
    ```
 
 5. **Access the application**
@@ -97,7 +101,20 @@ A comprehensive platform for sign language recognition, translation, and learnin
    - API: http://localhost:5000
    - PHP Backend: http://localhost:8080
 
-### Option 2: Manual Setup
+### Option 2: Windows Quick Start (XAMPP)
+
+A `start_project.bat` script is included for Windows developers using XAMPP.
+
+1. **Prerequisites**: Install [XAMPP](https://www.apachefriends.org/) and start Apache + MySQL from the XAMPP Control Panel.
+2. **Double-click `start_project.bat`** — it will open separate terminal windows for:
+   - Python ML Backend
+   - Flask API
+   - React Frontend
+3. Your browser will open **http://localhost:3000** automatically.
+
+> **Note:** The `.bat` script contains hard-coded paths from the original developer's machine. Update the paths at the top of the file to match your local setup before running.
+
+### Option 3: Manual Setup
 
 1. **Python ML Backend**
    ```bash
@@ -266,6 +283,22 @@ composer test
 - **Interface Languages**: English, Spanish, French, German
 - **Accessibility**: Screen reader support in multiple languages
 
+## 🛠️ Troubleshooting
+
+### MediaPipe / Python 3.13 Compatibility
+MediaPipe does not yet support Python 3.13. A fallback recognition system is built in. See [`MEDIAPIPE_FIXED.md`](MEDIAPIPE_FIXED.md) for details and workarounds.
+
+### Flask API Dependency Issues
+If you encounter dependency conflicts when installing the Flask API requirements, refer to [`FLASK_API_FIXED.md`](FLASK_API_FIXED.md) for the resolved configuration.
+
+### Common Issues
+| Issue | Solution |
+|-------|----------|
+| `ModuleNotFoundError: mediapipe` | Use Python 3.10 or 3.11, or rely on the built-in fallback recognizer |
+| `docker-compose: command not found` | Install Docker Desktop or run `docker compose` (v2 syntax) |
+| React app fails to connect to API | Verify `REACT_APP_API_URL` in `react_frontend/.env` matches your Flask port |
+| `start_project.bat` opens wrong paths | Update hard-coded paths at the top of the file to match your local setup |
+
 ## 🤝 Contributing
 
 1. Fork the repository
@@ -320,4 +353,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **Made with ❤️ for the disabled community**
 
-> Last updated: March 2026
+> Last updated: March 2026 — see [FLASK_API_FIXED.md](FLASK_API_FIXED.md) and [MEDIAPIPE_FIXED.md](MEDIAPIPE_FIXED.md) for the latest compatibility fixes.
